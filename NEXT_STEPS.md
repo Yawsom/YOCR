@@ -4,42 +4,51 @@
 > Credit: Cursor / Grok — August 2026.  
 > This file is updated as milestones land — it stays ahead of the repo, not frozen in place.
 
-This is a **public learning repo**. I'm building OCR-related systems from scratch to learn the stack properly. The kNN MNIST classifier (~96% on raw pixels) is **milestone one**: an honest baseline that stays in the repo while newer approaches are added.
+This is a **public learning repo**. I'm building OCR-related systems from scratch to learn the stack properly.
 
-The sections below are the planned path for this project. If you're reading along, treat them as the backlog — not promises with dates. Order may change; completed work will be reflected in the tree and called out here over time.
+**Done so far**
+
+- **Milestone 1 — kNN:** raw-pixel Euclidean kNN on MNIST, ~**96.4%** test accuracy. Stays in the repo as the benchmark.  
+- **Milestone 2 — MLP:** from-scratch network (`784→100→100→10`, sigmoid, MSE, backprop, SGD), **94.42%** test accuracy.
+
+The MLP is a real trained model and much faster than kNN at inference, but it does not yet beat the kNN baseline — expected for MSE + sigmoid on 10-way digits. Next work should either close that gap (better loss / training) or jump to models that can.
+
+The sections below are the planned path. If you're reading along, treat them as the backlog — not promises with dates.
 
 ---
 
-## 1. Keep kNN as the benchmark
+## 1. Keep earlier models as benchmarks
 
-The kNN implementation is not throwaway code. New models and preprocessing should be compared against the same evaluation protocol:
+kNN and the MLP are not throwaway code. New models and preprocessing should be compared against the same evaluation protocol:
 
 - same data split
 - same accuracy metric
 - preferably a confusion matrix, not just a single number
 
-If a fancier model can't beat ~96% on clean MNIST digits, training or evaluation is probably wrong.
+kNN is still the number to beat (~96.4%). If a fancier model lands far below that on clean MNIST, training or evaluation is probably wrong.
 
 ---
 
-## 2. Better features before fancier models
+## 2. Better features / training for the models we have
 
-Raw 28×28 pixels are brittle (shift, thickness, slant). Planned cheap wins:
+Raw 28×28 pixels are brittle (shift, thickness, slant). Cheap wins that would help both kNN and the MLP:
 
-- center / normalize each digit
-- light deskew
-- downsample or PCA to shrink dimensionality
+- center / normalize each digit more carefully  
+- light deskew  
+- downsample or PCA to shrink dimensionality  
 
-These should help kNN and whatever comes next.
+MLP-specific upgrades before (or alongside) a CNN:
+
+- **softmax + cross-entropy** instead of sigmoid + MSE  
+- a validation split, learning-rate / epoch sweeps  
+- print loss and accuracy each epoch  
 
 ---
 
-## 3. Trainable classifiers
+## 3. Trainable classifiers (remaining)
 
-Intended order:
-
-1. **Softmax / logistic regression** on flattened pixels — fast intro to loss + gradients  
-2. **Small MLP** (2–3 fully connected layers) — first neural net without convolution  
+1. ~~**Small MLP**~~ — done (sigmoid + MSE)  
+2. **Softmax / logistic regression** — still useful as a linear baseline, or as the MLP’s output layer  
 3. **SVM** (optional) — historically strong on MNIST; useful contrast to neural nets  
 
 Hyperparameters get tuned on a **validation** split. The test set is for a final report, not shopping for scores.
@@ -48,13 +57,15 @@ Hyperparameters get tuned on a **validation** split. The test set is for a final
 
 ## 4. CNNs — the leap for vision OCR
 
-Digits and characters are spatial. A small ConvNet (a few conv + pool blocks → dense → 10-way softmax) is the next major architecture milestone.
+This is the next major architecture milestone. Digits and characters are spatial; a small ConvNet (a few conv + pool blocks → dense → 10-way softmax) should beat both kNN and the MLP on MNIST, often into the **high 99%s** if trained cleanly.
 
-On MNIST, a modest CNN should reach the **high 99%s** if trained cleanly. Goals for that stage:
+Goals for that stage:
 
-- why local receptive fields beat flat vectors
-- overfitting / regularization / data augmentation
-- reading training curves
+- why local receptive fields beat flat vectors  
+- overfitting / regularization / data augmentation  
+- reading training curves  
+
+New code should live in its own folder (e.g. `CNN_MNIST/`).
 
 ---
 
@@ -67,8 +78,6 @@ As the repo grows:
 - log loss + accuracy  
 - confusion matrices (common MNIST confusions: `4`/`9`, `3`/`5`, etc.)  
 - reproducible runs (seed, config, dependency versions)
-
-New approaches should get their own folders (e.g. `MLP_MNIST/`, `CNN_MNIST/`) rather than overwriting the kNN baseline.
 
 ---
 
@@ -99,8 +108,8 @@ Further out, when the focus shifts to real documents:
 ## Short path
 
 ```
-preprocess → MLP on MNIST → small CNN → error analysis
+kNN baseline ✓ → MLP ✓ → (softmax/CE or preprocess) → small CNN → error analysis
         → EMNIST or real scans → detection + recognition pipeline
 ```
 
-Milestone one is done: a measured baseline built from scratch. Everything after that is deliberate iteration — beat the baseline, then raise the difficulty.
+Two measured from-scratch models are in the tree. Next is to beat kNN on purpose, then raise the difficulty.

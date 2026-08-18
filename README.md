@@ -2,7 +2,10 @@
 
 A **public learning project** for building OCR-style systems from scratch. I'm iterating on this over time — starting with handwritten digit recognition on MNIST, then moving toward stronger models and fuller OCR pipelines.
 
-The first milestone is a from-scratch **k-nearest neighbors (kNN)** classifier: reading the MNIST IDX format, turning images into feature vectors, computing distances, and voting on a label. Later work (preprocessing, neural nets, harder datasets, document OCR) will be added alongside this baseline rather than replacing it.
+Milestones so far are implemented from scratch (NumPy only for the faster paths) and kept side by side rather than replacing each other:
+
+1. **k-nearest neighbors** — IDX loading, flattened pixels, distances, majority vote  
+2. **Multilayer perceptron** — sigmoid layers, MSE loss, backprop, SGD  
 
 This is not a finished product. Expect the layout, models, and docs to keep changing. [NEXT_STEPS.md](NEXT_STEPS.md) is the living roadmap.
 
@@ -10,11 +13,13 @@ This is not a finished product. Expect the layout, models, and docs to keep chan
 
 ```
 KNN-OCR/
+├── MNIST_data/               # Shared MNIST IDX files
 ├── KNN_MNIST/
-│   ├── data/                 # MNIST IDX files
 │   ├── ocr.py                # Pure-Python kNN
 │   └── ocr_efficient.py      # Faster kNN (NumPy + squared distance + top-k heap)
-├── NEXT_STEPS.md             # Living roadmap for future iterations
+├── MLP_MNIST/
+│   └── MLP_OCR.py            # From-scratch MLP (sigmoid + MSE + backprop)
+├── NEXT_STEPS.md
 ├── README.md
 └── .gitignore
 ```
@@ -22,7 +27,7 @@ KNN-OCR/
 ## Requirements
 
 - Python 3.10+
-- NumPy (for `ocr_efficient.py` only)
+- NumPy (for `ocr_efficient.py` and `MLP_OCR.py`)
 
 ```bash
 python3 -m venv .venv
@@ -32,7 +37,7 @@ pip install numpy
 
 ## Data
 
-Place the standard MNIST IDX files under `KNN_MNIST/data/`:
+Place the standard MNIST IDX files under `MNIST_data/`:
 
 - `train-images.idx3-ubyte`
 - `train-labels.idx1-ubyte`
@@ -44,20 +49,30 @@ Place the standard MNIST IDX files under `KNN_MNIST/data/`:
 Run from the **repo root** (paths in the scripts assume that):
 
 ```bash
-# Pure Python baseline (slow on full MNIST)
+# Pure Python kNN (slow on full MNIST)
 python KNN_MNIST/ocr.py
 
-# Faster version
+# Faster kNN
 python KNN_MNIST/ocr_efficient.py
+
+# From-scratch MLP
+python MLP_MNIST/MLP_OCR.py
 ```
 
-Both scripts load the training set, classify the test set with kNN (`k=5` by default), and print accuracy.
+kNN scripts print test accuracy after classifying with `k=5` by default. The MLP trains 10 epochs of SGD on the full training set, then prints test accuracy.
 
-For quicker experiments, pass a sample limit into `read_images` / `read_labels` inside `main()`.
+For quicker experiments, pass a sample limit into `read_images` / `read_labels`.
 
-## Current results (kNN milestone)
+## Current results
 
-On full MNIST train (~60k) and the full test set (10k), the efficient kNN setup reached about **96.4%** accuracy — a normal result for raw-pixel Euclidean kNN, and the baseline future models in this repo should beat.
+Full MNIST train (~60k) and full test set (10k), raw flattened pixels:
+
+| Model | Accuracy | Notes |
+|-------|----------|--------|
+| kNN (`k=5`, Euclidean) | **~96.4%** | Current strongest baseline |
+| MLP (`784→100→100→10`, sigmoid, MSE) | **94.42%** | Trains in a few minutes |
+
+The MLP is in the right ballpark for this architecture and loss. A CNN (or even softmax + cross-entropy) is the usual way to push past kNN on pixels.
 
 ## What's next?
 
