@@ -1,7 +1,7 @@
 import math
 import heapq
 
-DATA_DIR = "data/"
+DATA_DIR = "KNN_MNIST/data/"
 
 TRAIN_DATA_FILENAME = DATA_DIR + "train-images.idx3-ubyte"
 TRAIN_LABELS_FILENAME = DATA_DIR + "train-labels.idx1-ubyte"
@@ -142,8 +142,8 @@ def accuracy_score(y_true, y_pred) -> float:
 def main():
     X_train = read_images(TRAIN_DATA_FILENAME)
     y_train = read_labels(TRAIN_LABELS_FILENAME)
-    X_test = read_images(TEST_DATA_FILENAME, 1000)
-    y_test = read_labels(TEST_LABELS_FILENAME, 1000)
+    X_test = read_images(TEST_DATA_FILENAME)
+    y_test = read_labels(TEST_LABELS_FILENAME)
 
     y_pred = knn(X_train, y_train, X_test, k = 5, n_labels = 10)
     accuracy = accuracy_score(y_test, y_pred)
