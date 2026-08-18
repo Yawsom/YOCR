@@ -1,6 +1,6 @@
 import numpy as np
 
-DATA_DIR = "KNN_MNIST/data/"
+DATA_DIR = "MNIST_data/"
 
 TRAIN_DATA_FILENAME = DATA_DIR + "train-images.idx3-ubyte"
 TRAIN_LABELS_FILENAME = DATA_DIR + "train-labels.idx1-ubyte"
@@ -10,31 +10,83 @@ TEST_LABELS_FILENAME = DATA_DIR + "t10k-labels.idx1-ubyte"
 
 class MLP_layer:
     def __init__(self, input_size, output_size):
-        self.Weights = np.random.rand(input_size, output_size)
+
+        limit = np.sqrt(6 / (input_size + output_size))
+        #uniform xiaver initialization
+        self.Weights = np.random.uniform(low=-limit,high=limit,size=(output_size, input_size))
         self.biases = np.zeros(output_size)
+        self.zCache = None
+        self.aCache = None
+        self.xCache = None
+        self.learning_rate = 0.01
+
+    # activation function is sigmoid
+
+    def activation_function(self, x):
+        return 1 / (1 + np.exp(-x))
 
     def forward(self, x):
-        return np.dot(x, self.Weights) + self.biases
+        self.xCache = x
+        self.zCache = np.dot(self.Weights, x) + self.biases
+        self.aCache = self.activation_function(self.zCache)
+        return self.aCache
+
+    def backward(self, gradient_input):
+
+        # gradient_input is dL/da for this layer's output.
+        # Multiply by da/dz to obtain this layer's delta = dL/dz.
+        # da/dz = a * (1 - a)
+
+        delta = gradient_input * (self.aCache * (1 - self.aCache))
         
+        delta_weights = np.outer(delta, self.xCache)
+        delta_biases = delta
+
+        grad_input = self.Weights.T @ delta
+        self.Weights -= self.learning_rate * delta_weights
+        self.biases -= self.learning_rate * delta_biases
+
+        return grad_input
+
+class MLP_layer_output(MLP_layer):
+    def __init__(self, input_size, output_size):
+        super().__init__(input_size, output_size)
+        
+    def backward(self, y_true):
+
+        delta = ((self.aCache - y_true) * self.aCache * (1 - self.aCache))
+        
+        delta_weights = np.outer(delta, self.xCache)
+        delta_biases = delta
+        grad_input = self.Weights.T @ delta
+        self.Weights -= self.learning_rate * delta_weights
+        self.biases -= self.learning_rate * delta_biases
+
+        return grad_input
     
 
 class MLP:
+
     def __init__(self, input_size, hidden_sizes, output_size):
         self.layers = []
         for i in range(len(hidden_sizes)):
             self.layers.append(MLP_layer(input_size, hidden_sizes[i]))
             input_size = hidden_sizes[i]
-        self.layers.append(MLP_layer(input_size, output_size))
+        self.layers.append(MLP_layer_output(input_size, output_size))
 
     def forward(self, x):
         for layer in self.layers:
-            layer.forward(x)
+            x = layer.forward(x)
+        return x
 
-    def backward(self):
-        for i in range(len(self.layers)-1, 0, -1):
-            self.layers[i].backward(self.layers[i-1])
+    def backward(self, y_true):
+        grad_input = self.layers[-1].backward(y_true)
+        for layer in reversed(self.layers[:-1]):
+            grad_input = layer.backward(grad_input)
+        return grad_input
 
-
+    def classify(self, x):
+        return np.argmax(self.forward(x))
 
 def read_images(filename, nmax_images=None) -> list[list[list[int]]]:
     with open(filename, "rb") as fp:
@@ -77,25 +129,38 @@ def read_labels(filename, nmax_labels=None) -> list[int]:
 
 
 def extract_features(X):
-    return [flatten_list(sample) for sample in X]
-
+    flattened = [flatten_list(sample) for sample in X]
+    return [np.array(sample, dtype=np.float64) / 255.0 for sample in flattened]
 
 def flatten_list(list: list) -> list:
     return [item for sublist in list for item in sublist]
 
-
 def accuracy_score(y_true, y_pred) -> float:
     return sum(1 for true, pred in zip(y_true, y_pred) if true == pred) / len(y_true)
 
+def one_hot_encode(y, num_classes):
+    return np.eye(num_classes)[y]
 
 def main():
-    X_train = read_images(TRAIN_DATA_FILENAME)
+    X_train = extract_features(read_images(TRAIN_DATA_FILENAME))
     y_train = read_labels(TRAIN_LABELS_FILENAME)
-    X_test = read_images(TEST_DATA_FILENAME)
+    X_test = extract_features(read_images(TEST_DATA_FILENAME))
     y_test = read_labels(TEST_LABELS_FILENAME)
 
     # TODO: implement MLP (squared-error loss)
+    mlp = MLP(784, [100, 100], 10)
 
+    for epoch in range(10):
+        order = np.random.permutation(len(X_train))
+        for i in order:
+            x = X_train[i]
+            y = y_train[i]
+            y = one_hot_encode(y, 10)
+            mlp.forward(x)
+            mlp.backward(y)
+
+    y_pred = [mlp.classify(x) for x in X_test]
+    print(accuracy_score(y_test, y_pred))
 
 if __name__ == "__main__":
     main()
