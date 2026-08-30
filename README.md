@@ -1,4 +1,4 @@
-# KNN-OCR
+# YOCR - KNN/MLP 
 
 A **public learning project** for building OCR-style systems from scratch. I'm iterating on this over time — starting with handwritten digit recognition on MNIST, then moving toward stronger models and fuller OCR pipelines.
 
