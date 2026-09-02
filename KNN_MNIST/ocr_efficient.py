@@ -1,7 +1,7 @@
 import heapq
 import numpy as np
 
-DATA_DIR = "KNN_MNIST/data/"
+DATA_DIR = "MNIST_data/"
 
 TRAIN_DATA_FILENAME = DATA_DIR + "train-images.idx3-ubyte"
 TRAIN_LABELS_FILENAME = DATA_DIR + "train-labels.idx1-ubyte"

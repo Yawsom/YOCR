@@ -29,7 +29,7 @@ class MLP_layer:
         self.xCache = x
         self.zCache = np.dot(self.Weights, x) + self.biases
         self.aCache = self.activation_function(self.zCache)
-        return self.aCache
+        return self.aCache 
 
     def backward(self, gradient_input):
 
@@ -134,7 +134,7 @@ def extract_features(X):
 
 def flatten_list(list: list) -> list:
     return [item for sublist in list for item in sublist]
-
+    
 def accuracy_score(y_true, y_pred) -> float:
     return sum(1 for true, pred in zip(y_true, y_pred) if true == pred) / len(y_true)
 
